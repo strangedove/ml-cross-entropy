@@ -1,7 +1,7 @@
 ## Cut Your Losses in Large-Vocabulary Language Models
 
 This software project accompanies the research paper:
-**[Cut Your Losses in Large-Vocabulary Language Models](https://arxiv.org)**,
+**[Cut Your Losses in Large-Vocabulary Language Models](https://arxiv.org/abs/2411.09009)**,
 *Erik Wijmans, Brody Huval, Alexander Hertzberg, Vladlen Koltun, and Philipp Krähenbühl*.
 
 ![](assets/cce_figure.png)
@@ -201,7 +201,7 @@ export PYTHONPATH=/path/to/ml-cross-entropy:${PYTHONPATH}
   title        = {Cut Your Losses in Large-Vocabulary Language Models},
   journal      = {arXiv},
   year         = {2024},
-  url          = {https://arxiv.org},
+  url          = {https://arxiv.org/abs/2411.09009},
 }
 ```
 

@@ -14,7 +14,7 @@ def _handle_eps(filter_eps: float | str | None, dtype: torch.dtype) -> float | N
         case float():
             return filter_eps
         case "auto":
-            return torch.finfo(dtype).eps / 8
+            return torch.finfo(dtype).eps / 32
         case _:
             raise RuntimeError(f"Unknown eps {filter_eps=}")
 

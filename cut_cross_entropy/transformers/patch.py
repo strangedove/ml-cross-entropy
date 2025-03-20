@@ -7,6 +7,7 @@ from cut_cross_entropy.cce_utils import LinearCrossEntropyImpl
 from cut_cross_entropy.linear_cross_entropy import LCE_IMPL_DEFAULT
 
 from .gemma2 import patch_gemma2
+from .gemma3 import patch_gemma3
 from .llama import patch_llama
 from .mistral import patch_mistral
 from .phi3 import patch_phi3
@@ -84,6 +85,8 @@ def cce_patch(
             return patch_phi3(model_type_or_model, patch_options)
         case "gemma2":
             return patch_gemma2(model_type_or_model, patch_options)
+        case "gemma3":
+            return patch_gemma3(model_type_or_model, patch_options)
         case "mistral":
             return patch_mistral(model_type_or_model, patch_options)
         case "qwen2":

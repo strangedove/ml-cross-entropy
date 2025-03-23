@@ -101,7 +101,7 @@ def cce_forward(
         loss = apply_lce(hidden_states, self.lm_head.weight, labels, _PATCH_OPTS, **kwargs)
     else:
         slice_indices = slice(-logits_to_keep, None) if isinstance(logits_to_keep, int) else logits_to_keep
-        logits = self.lm_head(hidden_states[:, slice_indices:, :])
+        logits = self.lm_head(hidden_states[:, slice_indices, :])
 
         if labels is not None:
             loss = self.loss_function(logits, labels, self.vocab_size, **kwargs)

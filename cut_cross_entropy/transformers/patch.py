@@ -91,5 +91,7 @@ def cce_patch(
             return patch_mistral(model_type_or_model, patch_options)
         case "qwen2":
             return patch_qwen2(model_type_or_model, patch_options)
+        case "cohere2":
+            return patch_cohere2(model_type_or_model, patch_options)
         case _:
             raise RuntimeError(f"Unknown model type {model_type}")

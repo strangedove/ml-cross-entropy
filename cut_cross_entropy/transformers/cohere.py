@@ -6,9 +6,9 @@ import torch
 import transformers
 from transformers.cache_utils import Cache
 from transformers.modeling_outputs import CausalLMOutputWithPast
-from transformers.models.cohere.modeling_cohere import (
+from transformers.models.cohere2.modeling_cohere2 import (
     _CONFIG_FOR_DOC,
-    COHERE_INPUTS_DOCSTRING,
+    COHERE2_INPUTS_DOCSTRING,
     KwargsForCausalLM,
     Unpack,
 )
@@ -22,7 +22,7 @@ from .utils import PatchOptions, TransformersModelT, apply_lce
 _PATCH_OPTS: PatchOptions | None = None
 
 
-@add_start_docstrings_to_model_forward(COHERE_INPUTS_DOCSTRING_INPUTS_DOCSTRING)
+@add_start_docstrings_to_model_forward(COHERE2_INPUTS_DOCSTRING_INPUTS_DOCSTRING)
 @replace_return_docstrings(output_type=CausalLMOutputWithPast, config_class=_CONFIG_FOR_DOC)
 def cce_forward(
     self,
@@ -58,10 +58,10 @@ def cce_forward(
     Example:
 
     ```python
-    >>> from transformers import AutoTokenizer, CohereForCausalLM
+    >>> from transformers import AutoTokenizer, Cohere2ForCausalLM
 
-    >>> model = CohereForCausalLM.from_pretrained("CohereForAI/c4ai-command-r-08-2024")
-    >>> tokenizer = AutoTokenizer.from_pretrained("CohereForAI/c4ai-command-r-08-2024")
+    >>> model = Cohere2ForCausalLM.from_pretrained("CohereForAI/c4ai-command-a-03-2025")
+    >>> tokenizer = AutoTokenizer.from_pretrained("CohereForAI/c4ai-command-a-03-2025")
 
     >>> prompt = "This is an example script ."
     >>> inputs = tokenizer(prompt, return_tensors="pt")
@@ -119,20 +119,20 @@ def cce_forward(
         attentions=outputs.attentions,
     )
 
-def patch_cohere(
+def patch_cohere2(
     maybe_model: TransformersModelT | str | transformers.PretrainedConfig,
     patch_options: PatchOptions,
 ) -> TransformersModelT | None:
     global _PATCH_OPTS
-    from transformers.models.cohere import modeling_cohere
+    from transformers.models.cohere2 import modeling_cohere2
 
     _PATCH_OPTS = patch_options
 
     if isinstance(maybe_model, transformers.PreTrainedModel):
         assert isinstance(
-            maybe_model, modeling_cohere.CohereForCausalLM
-        ), f"Expected a CohereForCausalLM model. Got {type(maybe_model)}."
+            maybe_model, modeling_cohere2.Cohere2ForCausalLM
+        ), f"Expected a Cohere2ForCausalLM model. Got {type(maybe_model)}."
         maybe_model.forward = MethodType(cce_forward, maybe_model)
         return maybe_model
     else:
-        modeling_cohere.CohereForCausalLM.forward = cce_forward
+        modeling_cohere2.Cohere2ForCausalLM.forward = cce_forward

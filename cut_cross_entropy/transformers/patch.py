@@ -12,6 +12,8 @@ from .llama import patch_llama
 from .mistral import patch_mistral
 from .phi3 import patch_phi3
 from .qwen2 import patch_qwen2
+from .cohere import patch_cohere 
+from .cohere2 import patch_cohere2
 from .utils import PatchOptions, TransformersModelT
 
 
@@ -91,6 +93,8 @@ def cce_patch(
             return patch_mistral(model_type_or_model, patch_options)
         case "qwen2":
             return patch_qwen2(model_type_or_model, patch_options)
+        case "cohere":
+            return patch_cohere(model_type_or_model, patch_options)
         case "cohere2":
             return patch_cohere2(model_type_or_model, patch_options)
         case _:

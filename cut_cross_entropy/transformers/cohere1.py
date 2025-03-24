@@ -22,7 +22,7 @@ from .utils import PatchOptions, TransformersModelT, apply_lce
 _PATCH_OPTS: PatchOptions | None = None
 
 
-@add_start_docstrings_to_model_forward(COHERE_INPUTS_DOCSTRING_INPUTS_DOCSTRING)
+@add_start_docstrings_to_model_forward(COHERE_INPUTS_DOCSTRING)
 @replace_return_docstrings(output_type=CausalLMOutputWithPast, config_class=_CONFIG_FOR_DOC)
 def cce_forward(
     self,

@@ -5,7 +5,7 @@ from typing import List, Optional, Tuple, Union
 import torch
 import torch.nn as nn
 import transformers
-from transformers.cache_utils import HybridCache
+from transformers.cache_utils import Cache, HybridCache, StaticCache
 from transformers.modeling_outputs import CausalLMOutputWithPast
 from transformers.models.gemma3.modeling_gemma3 import (
     _CONFIG_FOR_DOC,

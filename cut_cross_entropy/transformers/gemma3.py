@@ -109,7 +109,7 @@ def cce_forward(
         loss = apply_lce(hidden_states, self.embed_tokens.weight, labels, _PATCH_OPTS, **loss_kwargs)
     else:
         # Only compute necessary logits, and do not upcast them to float if we are not computing the loss
-        logits = self.lm_head(hidden_states[:, -num_logits_to_keep:, :])
+        logits = self.embed_tokens(hidden_states[:, -num_logits_to_keep:, :])
         # In Gemma3 the `final_logit_softcapping` defaults to None, this will not activate (however, I am leaving it in as a softcapping value can be optionally applied in theory)
         if self.config.final_logit_softcapping is not None:
             logits = logits / self.config.final_logit_softcapping
@@ -272,11 +272,11 @@ def multimodal_cce_forward(
 
     if _PATCH_OPTS is not None and _PATCH_OPTS.use_lce(labels, self.training):
         assert labels is not None
-        loss = apply_lce(hidden_states, self.lm_head.weight, labels, _PATCH_OPTS, **loss_kwargs)
+        loss = apply_lce(hidden_states, self.embed_tokens.weight, labels, _PATCH_OPTS, **loss_kwargs)
     else:
         if labels is not None:
             # Upcast to float if we need to compute the loss to avoid potential precision issues
-            logits = self.lm_head(hidden_states[:, -logits_to_keep, :])
+            logits = self.embed_tokens(hidden_states[:, -logits_to_keep, :])
             logits = logits.float()
             shift_logits = logits[..., :-1, :]
             shift_labels = labels[..., 1:]

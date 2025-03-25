@@ -1,6 +1,6 @@
 # Copyright (C) 2024 Apple Inc. All Rights Reserved.
 from types import MethodType
-from typing import Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn

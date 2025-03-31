@@ -4,6 +4,7 @@ from typing import Optional, Tuple, Union
 
 import torch
 import transformers
+import deepspeed
 from transformers.cache_utils import HybridCache
 from transformers.modeling_outputs import CausalLMOutputWithPast
 from transformers.models.gemma3.modeling_gemma3 import (
@@ -105,7 +106,14 @@ def cce_forward(
 
     if _PATCH_OPTS is not None and _PATCH_OPTS.use_lce(labels, self.training):
         assert labels is not None
-        loss = apply_lce(hidden_states, self.lm_head.weight, labels, _PATCH_OPTS, **loss_kwargs)
+        zero3_enabled = hasattr(self.model, 'optimizer') and \
+                hasattr(self.model.optimizer, 'zero_optimization_stage') and \
+                self.model.optimizer.zero_optimization_stage() == 3
+
+        # Explicitly gather the parameter required by apply_lce under ZeRO-3
+        with deepspeed.zero.GatheredParameters(self.lm_head.weight, enabled=zero3_enabled):
+            # Inside this context, self.lm_head.weight will temporarily be the full tensor
+            loss = apply_lce(hidden_states, self.lm_head.weight, labels, _PATCH_OPTS, **loss_kwargs)
     else:
         # Only compute necessary logits, and do not upcast them to float if we are not computing the loss
         logits = self.lm_head(hidden_states[:, -num_logits_to_keep:, :])

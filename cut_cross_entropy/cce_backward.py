@@ -332,6 +332,8 @@ def cce_backward_kernel(
     filter_c_grad: bool = True,
 ) -> tuple[torch.Tensor | None, torch.Tensor | None, torch.Tensor | None]:
     assert do.numel() in (e.size(0), 1)
+    # temporary debugging
+    print(f"c.size {c.size()}, e.size {e.size()}")
     assert c.size(1) == e.size(1)
     assert lse.size(0) == e.size(0) or (valids is not None and lse.size(0) == valids.size(0))
     assert e.dtype in (

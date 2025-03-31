@@ -1,11 +1,18 @@
-# --- START OF FILE cce.py (Modified) ---
+# --- START OF FILE cce.py (Corrected) ---
 
 # Copyright (C) 2024 Apple Inc. All Rights Reserved.
 from dataclasses import dataclass
 from typing import cast
 
 import torch
-import deepspeed # <--- IMPORT DEEPSPEED
+# Only import deepspeed if needed for GatheredParameters
+try:
+    import deepspeed
+    DEEPSPEED_AVAILABLE = True
+except ImportError:
+    deepspeed = None # type: ignore
+    DEEPSPEED_AVAILABLE = False
+
 
 from cut_cross_entropy.cce_backward import cce_backward_kernel
 from cut_cross_entropy.cce_lse_forward import cce_lse_forward_kernel
@@ -32,9 +39,8 @@ class CCEParams:
     accum_c_fp32: bool
     filter_e_grad: bool
     filter_c_grad: bool
-    # Add a flag to track if ZeRO3 sharding might be active
-    # We determine this during forward when we have the parameter reference
-    is_zero3_active_heuristic: bool = False # Default to False
+    # Flag to track if potential ZeRO sharding is detected (heuristic)
+    is_zero_sharded_heuristic: bool = False # Default to False
 
 
 @torch.compile(fullgraph=True, dynamic=True)
@@ -54,18 +60,12 @@ class LinearCrossEntropyFunction(torch.autograd.Function):
         needs_grad = e.requires_grad or c.requires_grad
         return_logit_avg = needs_grad and params.filter_eps is not None
 
-        # --- Check for potential ZeRO-3 Sharding ---
-        # This is a heuristic. A more robust solution might involve
-        # passing an explicit flag from the training script if possible.
-        # We check if deepspeed is initialized AND the 'c' parameter has
-        # deepspeed attributes, suggesting it's managed/sharded.
-        is_zero3_active_heuristic = False
-        if deepspeed.is_initialized() and hasattr(c, 'ds_id'):
-             # Could potentially check deepspeed engine config for stage 3
-             # but that's harder to access here. Assume ds_id implies sharding.
-             is_zero3_active_heuristic = True
+        # --- Heuristic Check for ZeRO Sharding ---
+        # Check if the 'c' parameter has deepspeed attributes (like ds_id),
+        # suggesting it's managed/sharded by ZeRO stage 2 or 3.
+        is_zero_sharded_heuristic = DEEPSPEED_AVAILABLE and hasattr(c, 'ds_id')
         # Store this determination in the params object passed to backward via ctx
-        params.is_zero3_active_heuristic = is_zero3_active_heuristic
+        params.is_zero_sharded_heuristic = is_zero_sharded_heuristic
         # --- End Check ---
 
         ret = cce_lse_forward_kernel(
@@ -109,7 +109,7 @@ class LinearCrossEntropyFunction(torch.autograd.Function):
 
         # Save the original (potentially sharded) tensors
         ctx.save_for_backward(e, c, bias, lse, params.targets, params.valids, logit_avg)
-        # Save the params object which now contains the is_zero3_active_heuristic flag
+        # Save the params object which now contains the heuristic flag
         ctx.params = params
 
         return loss
@@ -128,7 +128,7 @@ class LinearCrossEntropyFunction(torch.autograd.Function):
 
         params = cast(CCEParams, ctx.params)
         # Retrieve the flag determined during forward
-        is_zero3_active = params.is_zero3_active_heuristic
+        is_zero_sharded = params.is_zero_sharded_heuristic
 
         reduction = params.reduction
         if reduction == "mean":
@@ -145,10 +145,20 @@ class LinearCrossEntropyFunction(torch.autograd.Function):
 
         # --- APPLY GATHER CONTEXT ---
         # Gather the classifier weights 'c' ONLY if our heuristic detected
-        # potential ZeRO-3 sharding during the forward pass.
-        with deepspeed.zero.GatheredParameters(c, enabled=is_zero3_active):
+        # potential ZeRO sharding during the forward pass AND deepspeed is available.
+        # Note: GatheredParameters handles enabled=False internally if deepspeed is None,
+        # but checking DEEPSPEED_AVAILABLE makes intent clearer.
+        gather_enabled = DEEPSPEED_AVAILABLE and is_zero_sharded
+        if gather_enabled:
+            context_manager = deepspeed.zero.GatheredParameters(c, enabled=True)
+        else:
+            # Use a dummy context manager if not gathering
+            from contextlib import nullcontext
+            context_manager = nullcontext()
+
+        with context_manager:
             # Inside this context, 'c' will refer to the FULLY GATHERED tensor
-            # if enabled=True, otherwise it remains the original (sharded) tensor.
+            # if gather_enabled=True, otherwise it remains the original tensor.
             # cce_backward_kernel should now receive the correct 2D tensor shape.
 
             # Call the kernel with the potentially gathered 'c'
@@ -177,6 +187,8 @@ class LinearCrossEntropyFunction(torch.autograd.Function):
         return de, dc, dbias, None
 
 
+# (linear_cross_entropy_apply and cce_linear_cross_entropy functions remain the same as the previous version)
+# ...
 def linear_cross_entropy_apply(
     e: torch.Tensor,
     c: torch.Tensor,
@@ -195,7 +207,6 @@ def linear_cross_entropy_apply(
 @add_doc_start(LINEAR_CROSS_ENTROPY_DOC)
 @add_doc_start(*(doc_str + "\n" for doc_str in CCE_OPTS_DOC))
 def cce_linear_cross_entropy(
-    # ... (arguments remain the same)
     e: torch.Tensor,
     c: torch.Tensor,
     targets: torch.Tensor,
@@ -210,7 +221,6 @@ def cce_linear_cross_entropy(
     filter_e_grad: bool = True,
     filter_c_grad: bool = True,
 ) -> torch.Tensor:
-    # ... (Input validation and setup remain the same)
     assert e.size()[0:-1] == targets.size()
     assert e.size(-1) == c.size(1)
     if not torch.cuda.is_bf16_supported():
@@ -248,7 +258,7 @@ def cce_linear_cross_entropy(
         accum_c_fp32,
         filter_e_grad=filter_e_grad and filter_eps is not None,
         filter_c_grad=filter_c_grad and filter_eps is not None,
-        # is_zero3_active_heuristic is False initially, set in forward
+        # is_zero_sharded_heuristic is False initially, set in forward
     )
 
 
@@ -258,5 +268,4 @@ def cce_linear_cross_entropy(
         bias,
         params, # Pass the params object
     )
-
-# --- END OF FILE cce.py (Modified) ---
+# --- END OF FILE cce.py (Corrected) ---

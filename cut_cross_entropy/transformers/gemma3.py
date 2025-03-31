@@ -107,32 +107,7 @@ def cce_forward(
 
     if _PATCH_OPTS is not None and _PATCH_OPTS.use_lce(labels, self.training):
         assert labels is not None
-        zero3_enabled = hasattr(self.model, 'optimizer') and \
-                hasattr(self.model.optimizer, 'zero_optimization_stage') and \
-                self.model.optimizer.zero_optimization_stage() == 3
-
-        # --- DEBUG ---
-        if int(os.environ.get("RANK", 0)) == 0:
-             print(f"[Rank {os.environ.get('RANK', 0)}] Before Gather: zero3_enabled = {zero3_enabled}")
-             print(f"[Rank {os.environ.get('RANK', 0)}] Before Gather: self.lm_head.weight exists? {hasattr(self.lm_head, 'weight')}")
-             if hasattr(self.lm_head, 'weight') and self.lm_head.weight is not None:
-                 print(f"[Rank {os.environ.get('RANK', 0)}] Before Gather: lm_head.weight shape = {self.lm_head.weight.shape}")
-                 # Check if DeepSpeed thinks it's sharded
-                 if hasattr(self.lm_head.weight, 'ds_id'):
-                     print(f"[Rank {os.environ.get('RANK', 0)}] Before Gather: lm_head.weight ds_id = {self.lm_head.weight.ds_id}, ds_numel = {self.lm_head.weight.ds_numel}, ds_shape = {self.lm_head.weight.ds_shape}")
-                 else:
-                     print(f"[Rank {os.environ.get('RANK', 0)}] Before Gather: lm_head.weight is NOT sharded according to ds attributes.")
-             else:
-                 print(f"[Rank {os.environ.get('RANK', 0)}] Before Gather: self.lm_head.weight is None or does not exist.")
-        # --- END DEBUG ---
-
-        with deepspeed.zero.GatheredParameters(self.lm_head.weight, enabled=zero3_enabled):
-            # --- DEBUG ---
-            if int(os.environ.get("RANK", 0)) == 0:
-                 print(f"[Rank {os.environ.get('RANK', 0)}] INSIDE Gather: lm_head.weight shape = {self.lm_head.weight.shape}")
-            # --- END DEBUG ---
-            # Pass the potentially gathered parameter reference
-            loss = apply_lce(hidden_states, self.lm_head.weight, labels, _PATCH_OPTS, **loss_kwargs)
+        loss = apply_lce(hidden_states, self.lm_head.weight, labels, _PATCH_OPTS, **loss_kwargs)
     else:
         # Only compute necessary logits, and do not upcast them to float if we are not computing the loss
         logits = self.lm_head(hidden_states[:, -num_logits_to_keep:, :])

@@ -123,9 +123,9 @@ def cce_forward(
 
 
 # --- REVISED multimodal_cce_forward ---
-@add_start_docstrings_to_model_forward(GEMMA3_INPUTS_DOCSTRING) # Keep relevant docstrings
+#@add_start_docstrings_to_model_forward(GEMMA3_INPUTS_DOCSTRING) # Keep relevant docstrings
 # Use the specific output type for the multimodal model
-@replace_return_docstrings(output_type=Gemma3CausalLMOutputWithPast, config_class=_CONFIG_FOR_DOC)
+#@replace_return_docstrings(output_type=Gemma3CausalLMOutputWithPast, config_class=_CONFIG_FOR_DOC)
 def multimodal_cce_forward(
     self,
     input_ids: torch.LongTensor = None,

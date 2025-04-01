@@ -23,8 +23,8 @@ from .utils import PatchOptions, TransformersModelT, apply_lce
 _PATCH_OPTS: PatchOptions | None = None
 
 # --- cce_forward (looks ok for Gemma3ForCausalLM) remains the same ---
-@add_start_docstrings_to_model_forward(GEMMA3_INPUTS_DOCSTRING)
-@replace_return_docstrings(output_type=CausalLMOutputWithPast, config_class=_CONFIG_FOR_DOC)
+#@add_start_docstrings_to_model_forward(GEMMA3_INPUTS_DOCSTRING)
+#@replace_return_docstrings(output_type=CausalLMOutputWithPast, config_class=_CONFIG_FOR_DOC)
 def cce_forward(
     self,
     input_ids: torch.LongTensor = None,

@@ -88,7 +88,7 @@ def cce_forward(
     if _PATCH_OPTS is not None and _PATCH_OPTS.use_lce(labels, self.training):
         assert labels is not None
         # Assuming apply_lce takes hidden_states, lm_head weights, labels, options, and maybe kwargs
-        loss = apply_lce(hidden_states, self.lm_head.weight, labels, _PATCH_OPTS, **loss_kwargs)
+        loss = apply_lce(hidden_states, self.embed_tokens.weight, labels, _PATCH_OPTS, **loss_kwargs)
         # Logits remain None when using LCE, as LCE calculates loss directly
     else:
         # Calculate logits using the logic from the original Gemma3ForCausalLM.forward
@@ -292,7 +292,7 @@ def multimodal_cce_forward(
         # Use LCE Loss
         assert labels is not None
         # apply_lce needs lm_head weights
-        loss = apply_lce(hidden_states, self.language_model.lm_head.weight, labels, _PATCH_OPTS, **lm_kwargs)
+        loss = apply_lce(hidden_states, self.language_model.embed_tokens.weight, labels, _PATCH_OPTS, **lm_kwargs)
         # Logits remain None
     else:
         # Use Standard Loss (or just calculate logits if no labels)

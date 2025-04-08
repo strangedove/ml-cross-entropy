@@ -11,6 +11,7 @@ from .llama import patch_llama
 from .mistral import patch_mistral
 from .phi3 import patch_phi3
 from .qwen2 import patch_qwen2
+from .qwen3 import patch_qwen3
 from .utils import PatchOptions, TransformersModelT
 
 PATCH_FNS = {
@@ -19,6 +20,7 @@ PATCH_FNS = {
     "gemma2": patch_gemma2,
     "mistral": patch_mistral,
     "qwen2": patch_qwen2,
+    "qwen3": patch_qwen3
 }
 
 

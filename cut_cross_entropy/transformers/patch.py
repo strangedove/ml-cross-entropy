@@ -22,7 +22,7 @@ PATCH_FNS = {
     "mistral": patch_mistral,
     "qwen2": patch_qwen2,
     "qwen3": patch_qwen3,
-    "qwen3_moe": patch_qwen3_moe
+    "qwen3_moe": patch_qwen3_moe,
 }
 
 
